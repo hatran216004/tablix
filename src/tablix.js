@@ -11,21 +11,12 @@ function Tablix(selector, options) {
     return console.error(`Tablix: No tabs found inside the container`);
   }
 
-  this.panels = this.tabs
-    .map((tab) => {
-      const panel = document.querySelector(tab.getAttribute('href'));
-      if (!panel) {
-        console.error(
-          `Tablix: No panel found with selector '${tab.getAttribute('href')}'`
-        );
-      }
-      return panel;
-    })
-    .filter(Boolean);
+  this.panels = this.getPanels();
 
   if (this.tabs.length !== this.panels.length) return;
 
-  this.paramKey = selector.replace(/[^a-zA-Z0-9]/g, '');
+  this.cleanRegex = /[^a-zA-Z0-9]/g;
+  this.paramKey = selector.replace(this.cleanRegex, '');
   this.otps = Object.assign(
     {
       activeClass: 'tablix--active',
@@ -38,29 +29,45 @@ function Tablix(selector, options) {
   this._init();
 }
 
-Tablix.prototype._init = function () {
+Tablix.prototype.getPanels = function () {
+  return this.tabs
+    .map((tab) => {
+      const panel = document.querySelector(tab.getAttribute('href'));
+      if (!panel) {
+        console.error(
+          `Tablix: No panel found with selector '${tab.getAttribute('href')}'`
+        );
+      }
+      return panel;
+    })
+    .filter(Boolean);
+};
+
+Tablix.prototype._findTabUrl = function () {
   const searchParams = new URLSearchParams(location.search);
   const tabSelector = searchParams.get(this.paramKey);
-  const tab =
-    (this.otps.rememberTab &&
-      tabSelector &&
-      this.tabs.find(
-        (tab) =>
-          tab.getAttribute('href').replace(/[^a-zA-Z0-9]/g, '') === tabSelector
-      )) ||
-    this.tabs[0];
+  return (
+    this.otps.rememberTab &&
+    tabSelector &&
+    this.tabs.find(
+      (tab) =>
+        tab.getAttribute('href').replace(this.cleanRegex, '') === tabSelector
+    )
+  );
+};
+
+Tablix.prototype._init = function () {
+  const tab = this._findTabUrl() || this.tabs[0];
 
   this._activateTab(tab, false);
   this.currentTab = tab;
 
   this.tabs.forEach((tab) => {
-    tab.onclick = (e) => this._handleTabOnclick(e, tab);
+    tab.onclick = (e) => {
+      e.preventDefault();
+      this._tryActivateTab(tab);
+    };
   });
-};
-
-Tablix.prototype._handleTabOnclick = function (e, tab) {
-  e.preventDefault();
-  this._tryActivateTab(tab);
 };
 
 Tablix.prototype._activateTab = function (tab, triggerOnChange = true) {
@@ -79,26 +86,24 @@ Tablix.prototype._activateTab = function (tab, triggerOnChange = true) {
 
   if (this.otps.rememberTab) {
     const searchParams = new URLSearchParams(location.search);
-    const paramValue = tab.getAttribute('href').replace(/[^a-zA-Z0-9]/g, '');
-    searchParams.set(this.paramKey, paramValue);
+    searchParams.set(
+      this.paramKey,
+      tab.getAttribute('href').replace(this.cleanRegex, '')
+    );
     history.replaceState(null, null, `?${searchParams}`);
   }
 };
 
-// selector: tabElement or panelSelector
+// input: tab element or panel selector
 Tablix.prototype.switch = function (input) {
-  let activeTab = null;
-  if (typeof input === 'string') {
-    activeTab = this.tabs.find((tab) => tab.getAttribute('href') === input);
-    if (!activeTab) {
-      return console.error(`Tablix: No tab found with '${input}'`);
-    }
-  } else if (this.tabs.includes(input)) {
-    activeTab = input;
-  }
-  if (!activeTab) return console.error(`Tablix: invalid switch input `);
+  const tab =
+    typeof input === 'string'
+      ? this.tabs.find((tab) => tab.getAttribute('href') === input)
+      : this.tabs.includes(input) && input;
 
-  this._tryActivateTab(activeTab);
+  if (!tab) return console.error(`Tablix: No tab found with '${input}'`);
+
+  this._tryActivateTab(tab);
 };
 
 Tablix.prototype._tryActivateTab = function (tab) {
@@ -114,4 +119,5 @@ Tablix.prototype.destroy = function () {
   this.container = null;
   this.panels = null;
   this.tabs = null;
+  this.currentTab = null;
 };
