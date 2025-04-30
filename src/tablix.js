@@ -32,14 +32,12 @@ function Tablix(selector, options) {
 
   if (this.tabs.length !== this.panels.length) return;
 
+  this._originalHTML = this.container.innerHTML;
   this._init();
 }
 
 Tablix.prototype._init = function () {
-  const activeTab = this.tabs[0];
-  const activePanel = this.panels[0];
-
-  this._handleActiveTab(activeTab, activePanel);
+  this._activeTab(this.tabs[0]);
 
   this.tabs.forEach((tab) => {
     tab.onclick = (e) => this._handleTabOnclick(e, tab);
@@ -48,17 +46,40 @@ Tablix.prototype._init = function () {
 
 Tablix.prototype._handleTabOnclick = function (e, tab) {
   e.preventDefault();
+  this._activeTab(tab);
+};
 
+Tablix.prototype._activeTab = function (tab) {
   this.tabs.forEach((tab) => {
     tab.closest('li').classList.remove(this.otps.activeClass);
   });
+  this.panels.forEach((panel) => (panel.hidden = true));
 
+  tab.closest('li').classList.add(this.otps.activeClass);
   const activePanel = document.querySelector(tab.getAttribute('href'));
-  this._handleActiveTab(tab, activePanel);
+  activePanel.hidden = false;
 };
 
-Tablix.prototype._handleActiveTab = function (tab, activePanel) {
-  tab.closest('li').classList.add(this.otps.activeClass);
-  this.panels.forEach((panel) => (panel.hidden = true));
-  activePanel.hidden = false;
+// selector: tabElement or panelSelector
+Tablix.prototype.switch = function (input) {
+  let activeTab = null;
+  if (typeof input === 'string') {
+    activeTab = this.tabs.find((tab) => tab.getAttribute('href') === input);
+    if (!activeTab) {
+      return console.error(`Tablix: No tab found with '${input}'`);
+    }
+  } else if (this.tabs.includes(input)) {
+    activeTab = input;
+  }
+  if (!activeTab) return console.error(`Tablix: invalid switch input `);
+
+  this._activeTab(activeTab);
+};
+
+Tablix.prototype.destroy = function () {
+  this.container.innerHTML = this._originalHTML;
+  this.panels.forEach((panel) => (panel.hidden = false));
+  this.container = null;
+  this.panels = null;
+  this.tabs = null;
 };
