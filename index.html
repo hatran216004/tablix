@@ -23,27 +23,14 @@
     <div id="tab2">Tab content 2</div>
     <div id="tab3">Tab content 3</div>
 
-    <!-- Tab 2 -->
-    <ul id="tabs2">
-      <li>
-        <a href="#tabA">Tab A</a>
-      </li>
-      <li>
-        <a href="#tabB">Tab B</a>
-      </li>
-      <li>
-        <a href="#tabC">Tab C</a>
-      </li>
-    </ul>
-    <div id="tabA">Tab content A</div>
-    <div id="tabB">Tab content B</div>
-    <div id="tabC">Tab content C</div>
     <script src="src/tablix.js"></script>
     <script>
       const tabs = new Tablix('#tabs', {
-        rememberTab: true
+        rememberTab: true,
+        onChange: ({ tab, panel }) => {
+          console.log({ tab, panel });
+        }
       });
-      // const tabs2 = new Tablix('#tabs2', { rememberTab: true });
 
       // tabs.destroy();
     </script>

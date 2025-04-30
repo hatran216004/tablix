@@ -29,7 +29,8 @@ function Tablix(selector, options) {
   this.otps = Object.assign(
     {
       activeClass: 'tablix--active',
-      rememberTab: false
+      rememberTab: false,
+      onChange: null
     },
     options
   );
@@ -49,7 +50,8 @@ Tablix.prototype._init = function () {
       )) ||
     this.tabs[0];
 
-  this._activeTab(tab);
+  this._activateTab(tab, false);
+  this.currentTab = tab;
 
   this.tabs.forEach((tab) => {
     tab.onclick = (e) => this._handleTabOnclick(e, tab);
@@ -58,18 +60,22 @@ Tablix.prototype._init = function () {
 
 Tablix.prototype._handleTabOnclick = function (e, tab) {
   e.preventDefault();
-  this._activeTab(tab);
+  this._tryActivateTab(tab);
 };
 
-Tablix.prototype._activeTab = function (tab) {
+Tablix.prototype._activateTab = function (tab, triggerOnChange = true) {
   this.tabs.forEach((tab) => {
     tab.closest('li').classList.remove(this.otps.activeClass);
   });
   this.panels.forEach((panel) => (panel.hidden = true));
 
   tab.closest('li').classList.add(this.otps.activeClass);
-  const activePanel = document.querySelector(tab.getAttribute('href'));
-  activePanel.hidden = false;
+  const activatePanel = document.querySelector(tab.getAttribute('href'));
+  activatePanel.hidden = false;
+
+  if (triggerOnChange && typeof this.otps.onChange === 'function') {
+    this.otps.onChange({ tab, panel: activatePanel });
+  }
 
   if (this.otps.rememberTab) {
     const searchParams = new URLSearchParams(location.search);
@@ -92,7 +98,14 @@ Tablix.prototype.switch = function (input) {
   }
   if (!activeTab) return console.error(`Tablix: invalid switch input `);
 
-  this._activeTab(activeTab);
+  this._tryActivateTab(activeTab);
+};
+
+Tablix.prototype._tryActivateTab = function (tab) {
+  if (this.currentTab !== tab) {
+    this._activateTab(tab);
+    this.currentTab = tab;
+  }
 };
 
 Tablix.prototype.destroy = function () {
