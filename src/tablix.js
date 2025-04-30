@@ -1,11 +1,4 @@
 function Tablix(selector, options) {
-  this.otps = Object.assign(
-    {
-      activeClass: 'tablix--active'
-    },
-    options
-  );
-
   this.container = document.querySelector(selector);
   if (!this.container) {
     return console.error(
@@ -32,12 +25,31 @@ function Tablix(selector, options) {
 
   if (this.tabs.length !== this.panels.length) return;
 
+  this.paramKey = selector.replace(/[^a-zA-Z0-9]/g, '');
+  this.otps = Object.assign(
+    {
+      activeClass: 'tablix--active',
+      rememberTab: false
+    },
+    options
+  );
   this._originalHTML = this.container.innerHTML;
   this._init();
 }
 
 Tablix.prototype._init = function () {
-  this._activeTab(this.tabs[0]);
+  const searchParams = new URLSearchParams(location.search);
+  const tabSelector = searchParams.get(this.paramKey);
+  const tab =
+    (this.otps.rememberTab &&
+      tabSelector &&
+      this.tabs.find(
+        (tab) =>
+          tab.getAttribute('href').replace(/[^a-zA-Z0-9]/g, '') === tabSelector
+      )) ||
+    this.tabs[0];
+
+  this._activeTab(tab);
 
   this.tabs.forEach((tab) => {
     tab.onclick = (e) => this._handleTabOnclick(e, tab);
@@ -58,6 +70,13 @@ Tablix.prototype._activeTab = function (tab) {
   tab.closest('li').classList.add(this.otps.activeClass);
   const activePanel = document.querySelector(tab.getAttribute('href'));
   activePanel.hidden = false;
+
+  if (this.otps.rememberTab) {
+    const searchParams = new URLSearchParams(location.search);
+    const paramValue = tab.getAttribute('href').replace(/[^a-zA-Z0-9]/g, '');
+    searchParams.set(this.paramKey, paramValue);
+    history.replaceState(null, null, `?${searchParams}`);
+  }
 };
 
 // selector: tabElement or panelSelector
