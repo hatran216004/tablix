@@ -1,6 +1,6 @@
 {
   "scripts": {
-    "minify": "terser src/tablix.js -o tablix.min.js && csso src/tablix.css -o tablix.min.css"
+    "minify": "terser src/tablix.js -o tablix.min.js"
   },
   "dependencies": {
     "csso-cli": "^4.0.2",
