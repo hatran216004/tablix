@@ -59,7 +59,7 @@ Tablix.prototype._findTabUrl = function () {
 Tablix.prototype._init = function () {
   const tab = this._findTabUrl() || this.tabs[0];
 
-  this._activateTab(tab, false);
+  this._activateTab(tab, false, false);
   this.currentTab = tab;
 
   this.tabs.forEach((tab) => {
@@ -70,7 +70,11 @@ Tablix.prototype._init = function () {
   });
 };
 
-Tablix.prototype._activateTab = function (tab, triggerOnChange = true) {
+Tablix.prototype._activateTab = function (
+  tab,
+  triggerOnChange = true,
+  updateURL = this.otps.rememberTab
+) {
   this.tabs.forEach((tab) => {
     tab.closest('li').classList.remove(this.otps.activeClass);
   });
@@ -84,7 +88,7 @@ Tablix.prototype._activateTab = function (tab, triggerOnChange = true) {
     this.otps.onChange({ tab, panel: activatePanel });
   }
 
-  if (this.otps.rememberTab) {
+  if (updateURL) {
     const searchParams = new URLSearchParams(location.search);
     searchParams.set(
       this.paramKey,
@@ -108,8 +112,8 @@ Tablix.prototype.switch = function (input) {
 
 Tablix.prototype._tryActivateTab = function (tab) {
   if (this.currentTab !== tab) {
-    this._activateTab(tab);
     this.currentTab = tab;
+    this._activateTab(tab);
   }
 };
 
